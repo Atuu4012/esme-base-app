@@ -1,3 +1,10 @@
+"""
+Lesson 5: LLM as a judge.
+
+This script reuses the sentiment dataset from lesson 4 and uses a second
+model call to score the first model's output on multiple dimensions.
+"""
+
 from dotenv import load_dotenv
 from langfuse import observe, get_client, Evaluation
 from groq import Groq
@@ -17,6 +24,7 @@ groq_client = Groq()
 def sentiment_task(text: str) -> dict:
     """Analyze sentiment of a text. This is the function we want to judge."""
 
+    # Keep the task output structured so the judge has a predictable input.
     response = groq_client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[
@@ -70,6 +78,7 @@ Respond ONLY with JSON:
 def llm_judge(input_text: str, output: dict, expected_output: dict) -> dict:
     """Use an LLM to evaluate the quality of another LLM's output."""
 
+    # The judge prompt defines the scoring rubric and the required JSON shape.
     user_message = f"""Original text: "{input_text}"
 
 System output:
@@ -105,6 +114,7 @@ def run_llm_judge_experiment():
 
     # Task: run sentiment analysis on each item
     def task(*, item) -> dict:
+        # The dataset item contains the input text for the task function.
         return sentiment_task(item.input["text"])
 
     # Evaluator: use the LLM judge to score each output

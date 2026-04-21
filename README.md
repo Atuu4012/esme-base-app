@@ -1,4 +1,4 @@
-# esme-base-app
+# README
 
 A hands-on course that takes you from a single LLM API call to a fully observable, tool-using AI agent — step by step.  
 Each numbered Python script is a self-contained lesson that builds on the previous one.
@@ -7,18 +7,24 @@ Each numbered Python script is a self-contained lesson that builds on the previo
 
 ## Table of Contents
 
-1. [What You Will Learn](#what-you-will-learn)
-2. [Prerequisites](#prerequisites)
-3. [Setup](#setup)
-4. [Course Lessons](#course-lessons)
-   - [Lesson 1 — Base LLM Call](#lesson-1--base-llm-call)
-   - [Lesson 2 — Logging with Langfuse](#lesson-2--logging-with-langfuse)
-   - [Lesson 3 — Multi-step Agent](#lesson-3--multi-step-agent)
-   - [Lesson 4 — Datasets & Experiments](#lesson-4--datasets--experiments)
-   - [Lesson 5 — LLM as a Judge](#lesson-5--llm-as-a-judge)
-   - [Lesson 6 — Tool Use with smolagents](#lesson-6--tool-use-with-smolagents)
-5. [How It All Fits Together](#how-it-all-fits-together)
-6. [Tips & Best Practices](#tips--best-practices)
+- [README](#readme)
+  - [Table of Contents](#table-of-contents)
+  - [What You Will Learn](#what-you-will-learn)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+  - [Course Lessons](#course-lessons)
+    - [Lesson 1 — Base LLM Call](#lesson-1--base-llm-call)
+    - [Lesson 2 — Logging with Langfuse](#lesson-2--logging-with-langfuse)
+    - [Lesson 3 — Multi-step Agent](#lesson-3--multi-step-agent)
+    - [Lesson 4 — Datasets \& Experiments](#lesson-4--datasets--experiments)
+    - [Lesson 5 — LLM as a Judge](#lesson-5--llm-as-a-judge)
+    - [Lesson 6 — Tool Use with smolagents](#lesson-6--tool-use-with-smolagents)
+    - [Lesson 7 — SmolAgents Quickstart](#lesson-7--smolagents-quickstart)
+    - [Lesson 8 — Advanced Agentic Patterns](#lesson-8--advanced-agentic-patterns)
+    - [Lesson 9 — Multi-Agent Systems](#lesson-9--multi-agent-systems)
+    - [Lesson 10 — Evaluating Agentic Systems](#lesson-10--evaluating-agentic-systems)
+  - [How It All Fits Together](#how-it-all-fits-together)
+  - [Tips \& Best Practices](#tips--best-practices)
 
 ---
 
@@ -32,6 +38,10 @@ Each numbered Python script is a self-contained lesson that builds on the previo
 | Create evaluation datasets and run experiments | Lesson 4 |
 | Use another LLM to judge the quality of outputs | Lesson 5 |
 | Give an agent real tools it can call at runtime | Lesson 6 |
+| Move from tool calls to a full agent framework | Lesson 7 |
+| Add planning, custom instructions, memory, and web search | Lesson 8 |
+| Coordinate multiple specialized agents | Lesson 9 |
+| Evaluate agent behavior with datasets and LLM judges | Lesson 10 |
 
 ---
 
@@ -39,6 +49,7 @@ Each numbered Python script is a self-contained lesson that builds on the previo
 
 - Python 3.12+
 - A [Groq](https://console.groq.com/) account and API key
+- A Google/Gemini API key if you want to run the Gemini-based agent lessons (7-10)
 - A [Langfuse](https://cloud.langfuse.com/) account (free tier is enough) with a project's public/secret keys
 - Basic familiarity with Python functions and `pip`
 
@@ -62,7 +73,7 @@ cp .env.example .env
 Open `.env` and replace the placeholder values:
 
 ```env
-GOOGLE_API_KEY="..."          # only needed if you swap to Google models
+GOOGLE_API_KEY="..."          # needed for the Gemini-based lessons (7-10)
 
 LANGFUSE_PUBLIC_KEY="..."     # from your Langfuse project settings
 LANGFUSE_SECRET_KEY="..."
@@ -225,6 +236,83 @@ python 06_tool_use.py
 
 ---
 
+### Lesson 7 — SmolAgents Quickstart
+
+**File:** `07_smolagents_quickstart.py`
+
+Shows the jump from manually orchestrated tool calls to a dedicated agent framework. The agent chooses when to call tools, handles the loop, and returns a final answer with less glue code.
+
+**Key concepts:**
+- **`CodeAgent`** — a higher-level agent that can write and execute Python snippets to call tools.
+- **`ToolCallingAgent`** — a more structured alternative that uses JSON tool calls instead of generated code.
+- **`@tool`** — a compact way to expose simple Python functions as agent tools.
+- **`LiteLLMModel`** — lets smolagents target Groq or Gemini through a unified interface.
+
+**Run it:**
+```bash
+python 07_smolagents_quickstart.py
+```
+
+---
+
+### Lesson 8 — Advanced Agentic Patterns
+
+**File:** `08_advanced_agentic.py`
+
+Extends the quickstart with more realistic agent behavior: a custom `Tool` class, periodic replanning, custom system instructions, multi-turn memory, and web search.
+
+**Key concepts:**
+- **Custom `Tool` subclasses** — useful when a tool needs initialization logic or class-level state.
+- **`planning_interval`** — makes the agent pause and re-plan after a fixed number of steps.
+- **Custom instructions** — appended to the system prompt to shape tone and domain rules.
+- **Conversation memory** — passing `reset=False` keeps the agent context across turns.
+- **`WebSearchTool`** — adds retrieval from the web when local tools are not enough.
+
+**Run it:**
+```bash
+python 08_advanced_agentic.py
+```
+
+---
+
+### Lesson 9 — Multi-Agent Systems
+
+**File:** `09_multi_agent.py`
+
+Demonstrates a hierarchical multi-agent setup where a manager agent delegates work to specialized workers. This is useful when different subtasks need different tools or prompts.
+
+**Key concepts:**
+- **Managed agents** — a manager `CodeAgent` can route work to sub-agents with `managed_agents=[...]`.
+- **Specialized roles** — one agent can research, another can analyze or summarize.
+- **Shared orchestration** — the manager coordinates the flow without hard-coding every step.
+- **Local vs. full configuration** — the script includes a simpler agent graph that works without web search, plus a fuller version for external research.
+
+**Run it:**
+```bash
+python 09_multi_agent.py
+```
+
+---
+
+### Lesson 10 — Evaluating Agentic Systems
+
+**File:** `10_agent_evaluation.py`
+
+Ties the course together by running an agent over a Langfuse dataset, judging the outputs with an LLM, and logging experiment results for comparison.
+
+**Key concepts:**
+- **Dataset-driven evaluation** — use a named Langfuse dataset to hold test cases and expected behaviors.
+- **Agent evaluation loops** — run the same agent against each dataset item with memory reset between items.
+- **LLM judge** — a second model scores the response on completeness, helpfulness, and tone.
+- **`run_experiment()`** — logs results so you can compare runs and inspect failures in Langfuse.
+
+**Run it:**
+```bash
+python 10_agent_evaluation.py
+```
+
+---
+
 ## How It All Fits Together
 
 ```
@@ -238,17 +326,22 @@ Lessons 4–5: Quality & evaluation
   └─ Measure how good your LLM pipeline actually is
      └─ With rules (Lesson 4) or another LLM (Lesson 5)
 
-Lesson 6: Agency
-  └─ Let the model choose its own actions via tools
+Lessons 6–9: Agency
+  └─ Let the model choose actions via tools, agent loops, planning,
+     memory, and multi-agent delegation
+
+Lesson 10: Evaluation
+  └─ Measure agent behavior with datasets and LLM judges
 ```
 
 All lessons share the same stack:
 
 | Layer | Technology |
 |---|---|
-| LLM provider | Groq (fast inference, free tier) |
+| LLM provider | Groq for the early lessons, Gemini for the agent framework examples |
 | Observability | Langfuse (traces, datasets, experiments) |
-| Agent framework | smolagents (Lesson 6 only) |
+| Agent framework | smolagents (Lessons 6-10) |
+| Retrieval / tools | Built-in tools, web search, and custom Python functions |
 | Config | `python-dotenv` + `.env` file |
 
 ---

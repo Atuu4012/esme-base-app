@@ -1,3 +1,10 @@
+"""
+Lesson 3: Multi-step agent pipeline.
+
+This script breaks one task into planning, execution, and synthesis.
+Each stage is traced separately so the full flow is visible in Langfuse.
+"""
+
 from dotenv import load_dotenv
 from groq import Groq
 from langfuse import observe, get_client, propagate_attributes
@@ -12,6 +19,7 @@ langfuse = get_client()
 def exercise1_multi_step_agent(task: str) -> dict:
 
     with propagate_attributes(tags=["exercise1", "multi-step-agent"]):
+        # Tag the trace with the user task for easier search and analysis.
         get_client().update_current_trace(
             metadata={"task": task}
         )
@@ -23,6 +31,7 @@ def exercise1_multi_step_agent(task: str) -> dict:
             # Step 2: Execute each step
             results = []
             for i, step in enumerate(plan["steps"]):
+                # Pass the previous outputs forward as context for the next step.
                 step_result = _execute_step(step, i, context=results)
                 results.append(step_result)
 
@@ -38,6 +47,7 @@ def exercise1_multi_step_agent(task: str) -> dict:
             }
 
         except Exception as e:
+            # Surface failures in the trace so they are easy to find in Langfuse.
             get_client().update_current_span(
                 level="ERROR",
                 status_message=str(e)
@@ -47,6 +57,7 @@ def exercise1_multi_step_agent(task: str) -> dict:
 
 @observe(name="planning", as_type="generation")
 def _plan_steps(task: str) -> dict:
+    # The planner asks the model to return structured JSON.
     response = groq_client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[
@@ -72,6 +83,7 @@ Return JSON: {"steps": ["step1", "step2", ...], "reasoning": "why these steps"}"
 def _execute_step(step: str, step_index: int, context: list) -> dict:
     """Execute a single step."""
 
+    # Record which step is currently running.
     get_client().update_current_span(
         metadata={"step_index": step_index, "step": step}
     )
@@ -101,6 +113,7 @@ def _execute_step(step: str, step_index: int, context: list) -> dict:
 def _synthesize_answer(task: str, results: list) -> str:
     """Synthesize final answer from all step results."""
 
+    # Turn all intermediate outputs into one final prompt.
     results_text = "\n\n".join([
         f"Step {r['step_index'] + 1} ({r['step']}):\n{r['output']}"
         for r in results

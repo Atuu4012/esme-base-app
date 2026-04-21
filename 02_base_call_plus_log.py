@@ -1,3 +1,10 @@
+"""
+Lesson 2: Base LLM call with Langfuse logging.
+
+This script repeats the lesson 1 request, but wraps it with Langfuse
+so the trace, metadata, and model output can be inspected in the UI.
+"""
+
 from dotenv import load_dotenv
 from groq import Groq
 from langfuse import observe, get_client
@@ -10,6 +17,7 @@ langfuse = get_client()
 @observe(name="simple_call", as_type="generation")
 def simple_call() -> dict:
 
+    # Attach metadata to the active trace so it is easier to filter later.
     get_client().update_current_trace(
         metadata={"type": "simple_call"}
     )
@@ -26,8 +34,10 @@ def simple_call() -> dict:
         temperature=0.5
     )
 
+    # Return the generated assistant text.
     return response.choices[0].message.content
 
 
 simple_call()
+# Flush buffered spans before the process exits.
 langfuse.flush()

@@ -1,3 +1,10 @@
+"""
+Lesson 4: Datasets and experiments.
+
+This script creates a Langfuse dataset, runs a sentiment task across the
+items, and compares the outputs using both manual and built-in experiment flows.
+"""
+
 from dotenv import load_dotenv
 from langfuse import observe, get_client, Evaluation
 from groq import Groq
@@ -15,6 +22,7 @@ groq_client = Groq()
 # =============================================================================
 
 def create_sentiment_dataset():
+    """Create the benchmark dataset the experiments will run against."""
 
     dataset = get_client().create_dataset(
         name="sentiment-benchmark-v1",
@@ -69,6 +77,7 @@ def create_sentiment_dataset():
         },
     ]
 
+    # Store each test case as a reusable Langfuse dataset item.
     for i, case in enumerate(test_cases):
         get_client().create_dataset_item(
             dataset_name="sentiment-benchmark-v1",
@@ -89,6 +98,7 @@ def create_sentiment_dataset():
 def sentiment_task(text: str) -> dict:
     """The function we want to test."""
 
+    # The model must answer in JSON so the evaluator can score it reliably.
     response = groq_client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[
@@ -219,6 +229,7 @@ def run_experiment_builtin():
     dataset = get_client().get_dataset("sentiment-benchmark-v1")
 
     def task(*, item) -> dict:
+        # Langfuse passes each dataset item into the task function.
         return sentiment_task(item.input["text"])
 
     def evaluator(**kwargs) -> list:
@@ -262,6 +273,7 @@ def compare_models():
     ]
 
     for config in configs:
+        # Close over the config so each run uses a different model/temperature pair.
         @observe()
         def task_with_config(text: str) -> dict:
             response = groq_client.chat.completions.create(
